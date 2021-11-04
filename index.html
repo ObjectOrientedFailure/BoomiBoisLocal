@@ -20,7 +20,7 @@
     </style>
   </head>
   <body>
-    
+    <canvas id="gameCanvas" width="1024" height="768"></canvas>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var time = 0;
@@ -52,10 +52,6 @@
           updatescorearray = freshxyc[2];
           updateblingarray = freshxyc[3];
         });
-      </script>
-
-<canvas id="gameCanvas" width="1024" height="768"></canvas>
-<script>
 const FPS = 30;
 var canvas, context; 
 var score = 0;
@@ -110,8 +106,11 @@ canvas = document.getElementById("gameCanvas");      // load canvas
     //now draw level bouncetangles
     var i=0;
     while(i<updatebtsarray.length){
-      context.fillStyle = updatebtsarray[i][4];
+      context.fillStyle = "dimgrey";//updatebtsarray[i][4];
       context.fillRect(updatebtsarray[i][0], updatebtsarray[i][1], updatebtsarray[i][2], updatebtsarray[i][3]);// size can change 
+      context.fillStyle = "grey";//updatebtsarray[i][4];
+      context.fillRect(updatebtsarray[i][0]+2, updatebtsarray[i][1]+2, updatebtsarray[i][2]-4, updatebtsarray[i][3]-4);// size can change 
+
       i++;
     }
     //now draw level attractors
@@ -165,7 +164,15 @@ switch (event.key) {  //movement keys change velocity
 event.preventDefault();// Cancel the default action to avoid it being handled twice
 }, true);
 </script>
-
-
+<br>
+Tap (do not hold) arrow keys to move, hit spacebar to release or detonate bombs.
+<br>
+Hit the bling or your opponent with an explosion to score.
+<br>
+You cannot be hit by an explosion, or hit others, while in the safe zone.
+<br>
+Your score is represented by the colored bar at the top left.
+<br>
+Also, don't get too close to the attractors/repulsors.
   </body>
 </html>

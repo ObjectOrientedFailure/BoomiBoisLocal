@@ -238,14 +238,15 @@ bling.randomize(xsize, ysize, 3);//This function randomizes location and velocit
 var level1 = [new Bouncetangle(384,112,256,32), new Bouncetangle(384,592,256,32)];
 var level2 = [new Bouncetangle(192,256,32,256), new Bouncetangle(800,256,32,256)];
 var level3 = [new Bouncetangle(384,112,256,32), new Bouncetangle(384,592,256,32), new Bouncetangle(192,256,32,256), new Bouncetangle(800,256,32,256)]
-var bts = level3;
-var ats = [new Attractor(160,160,16,1024)];
+var bts = level2;
+var ats = [];//[new Attractor(128,128,16,1024),new Attractor(1024-128,768-128,16,-1024)];
 //var ats = [new Attractor(192,192,16,1000)];
 
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
+server.listen(3000,'192.168.4.44');//server ip goes here--relocated
 
 //io.on('connection', (socket) => {//chat messaging
 //    socket.on('chat message', (msg) => {
@@ -302,9 +303,10 @@ io.on('connection', (socket) => { //Fresh connection and disconnection
      });
 });
 
-server.listen(3000, () => {
-  console.log('listening on *:3000');
-});
+//server.listen(3000,'192.168.4.44');//server ip goes here--relocated
+//server.listen(3000, () => {
+//  console.log('listening on *:3000');
+//});
 
 const FPS = 30;
 setInterval(update, 1000 / FPS);    		// set up interval (game loop)
