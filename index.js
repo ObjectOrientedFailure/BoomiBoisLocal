@@ -1,16 +1,21 @@
+console.log("stuff");
+
+var Umo = require('./umo.js');
+
+var testumo = new Umo(50,50,21,"red");
+testumo.update1();
 const express = require('express');
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
-//const { External } = require('util/types');
-//const { isExternal } = require('util/types');
 const io = new Server(server);
 const playercolors = ["red","darkred","green","aqua","navy","blue","purple","deeppink","brown","darkgreen","indigo","lime","white"];
 const xsize = 1024;
 const ysize = 768;
 const safex = 200; //size not location.
 const safey = 200;
+var maxspeed = 10;
 
 class Sprite {
   constructor(xxx, yyy, sss, ccc) {
@@ -45,8 +50,8 @@ class Sprite {
     var dy = checkedsprite.y - this.y; //y position difference
     var meansize = (checkedsprite.s + this.s)/2;  //total size
     if (((dx < meansize) && (dx > -1*meansize )) && ((dy < meansize) && (dy > -1*meansize ))){
-        return true; 
-        } else {return false;}
+      return true; 
+    } else {return false;}
   }
   match(that){
     this.x=that.x;
@@ -60,22 +65,30 @@ class Sprite {
     this.vx = 0;         //resets velocity
     this.vy = 0;
   }
-  
   randomize(xmax, ymax, vmax){ //This function randomizes location and velocity.
     this.x = this.s/2+Math.random()*(xmax - this.s/2); //Size is taken into account so items are
     this.y = this.s/2+Math.random()*(ymax - this.s/2); //not spawned partly out of bounds.
     this.vx = 2*(Math.random()*(vmax) - vmax/2); //Negative numbers are negative direction.
     this.vy = 2*(Math.random()*(vmax) - vmax/2);
   }
-  
   boundarybounce(xmax, ymax){ //Bounces off walls of rectangle from 0,0 to xmax, ymax
-    if ((this.x < this.s/2) || (this.x > xmax-this.s/2)){
+    if (this.x < this.s/2){// || (this.x > xmax-this.s/2)){
       this.vx = -1*this.vx; //X wall collision for sprite
-      return 1;
-    }else if ((this.y < this.s/2) || (this.y > ymax-this.s/2)){
+      this.x = this.s/2;
+      return true;
+    }else if (this.x > xmax-this.s/2){
+      this.vx = -1*this.vx; //X wall collision for sprite
+      this.x = xmax - this.s/2;
+      return true;
+    }else if (this.y < this.s/2){// || (this.y > ymax-this.s/2)){
       this.vy = -1*this.vy;  //Y wall collision for sprite
-      return 1;
-    } else {return 0;}
+      this.y = this.s/2;
+      return true;
+    }else if (this.y > ymax-this.s/2){
+      this.vy = -1*this.vy;
+      this.y = ymax - this.s/2;
+      return true;
+    } else {return false;}
   }
   boundarykill(xmax, ymax){ //Bounces off walls of rectangle from 0,0 to xmax, ymax
     if ((this.x < this.s/2) || (this.x > xmax-this.s/2)){
@@ -128,7 +141,6 @@ class Bouncetangle{
     }
   }
 }
-
 class Attractor{
   constructor(x,y,size,mass){
     this.x = x;
@@ -145,7 +157,6 @@ class Attractor{
     thesprite.vy = thesprite.vy + Math.sin(dir)*this.m/distsq;
   }
 }
-
 class User{
   constructor(name,id){
     this.name = name;
@@ -234,46 +245,25 @@ class Userlist{
 var allusers = new Userlist([]);
 var bling = new Sprite(0,0,48,"grey")
 bling.randomize(xsize, ysize, 3);//This function randomizes location and velocity.
-//bts is basically the level design.
 var level1 = [new Bouncetangle(384,112,256,32), new Bouncetangle(384,592,256,32)];
 var level2 = [new Bouncetangle(192,256,32,256), new Bouncetangle(800,256,32,256)];
 var level3 = [new Bouncetangle(384,112,256,32), new Bouncetangle(384,592,256,32), new Bouncetangle(192,256,32,256), new Bouncetangle(800,256,32,256)]
-var bts = level2;
-var ats = [];//[new Attractor(128,128,16,1024),new Attractor(1024-128,768-128,16,-1024)];
+var currentlevel = 0;//Not yet used
+var bts = level2; //bts contains all the bouncetangles in use, 
+var ats = []; //ats contains all the attractors in use
+//[new Attractor(128,128,16,1024),new Attractor(1024-128,768-128,16,-1024)];
 //var ats = [new Attractor(192,192,16,1000)];
-
-
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 server.listen(3000,'192.168.4.44');//server ip goes here--relocated
-
-//io.on('connection', (socket) => {//chat messaging
-//    socket.on('chat message', (msg) => {
-//      var theid = socket.id;
-//      io.emit('chat message', allusers.getname(theid)+": "+msg);
-//    });
-// });
-
-//io.on('connection', (socket) => { //name changing
-//  socket.on('namechange', (newname) => {
-//    var theid = socket.id;
-//    var theusername = allusers.getname(theid);
-//    var found = allusers.setname(newname,theid);
-//    console.log("name change "+found);
-//    io.emit('chat message', theusername+" changed name to "+allusers.getname(theid));
-//  });
-//});
-
 io.on('connection', (socket) => { //Player input
   socket.on('gameinput', (input) => {
     var theid = socket.id;
     allusers.setinput(input,theid);
   });
 });
-
 io.on('connection', (socket) => { //Fresh connection and disconnection
-    //console.log('a user connected');
     var theid = socket.id;
     var newuser = new User("Cactus Fantastico",theid);//Setting name, not really used
     var randomplayercolor = playercolors[Math.floor(Math.random()*playercolors.length)];
@@ -298,35 +288,32 @@ io.on('connection', (socket) => { //Fresh connection and disconnection
     allusers.users[allusers.users.length-1].s.y = ysize/2+Math.floor(Math.random()*9)-4;
     console.log(allusers);
     socket.on('disconnect', () => {
-        //io.emit('chat message', allusers.getname(theid)+" has disconnected");
         allusers.users.splice(allusers.getindex(theid), 1);//remove defunct users here
      });
 });
-
-//server.listen(3000,'192.168.4.44');//server ip goes here--relocated
-//server.listen(3000, () => {
-//  console.log('listening on *:3000');
-//});
-
 const FPS = 30;
 setInterval(update, 1000 / FPS);    		// set up interval (game loop)
-
 function update() { //game loop
   var updateplayerarray = [];
   var updatebombarray = [];
   var updatescorearray = [];
   var updateblingarray = [];
- 
   var i=0;
   while(i<allusers.users.length){//For all players...
     if (allusers.users[i].s.x<0){//Resurrect dead players
       allusers.users[i].s.x = xsize/2;
       allusers.users[i].s.y = ysize/2;
     }
+    if (allusers.users[i].s.vx>maxspeed){allusers.users[i].s.vx = maxspeed;}//speed limits
+    if (allusers.users[i].s.vy>maxspeed){allusers.users[i].s.vy = maxspeed;}
     //bomb explosion stuff
     if(allusers.users[i].bs.c=="orange"){//If bomb is in explosion state
-      if (allusers.users[i].bs.s==96){//If bomb is in stage 1 of explosion...
-        allusers.users[i].bs.s=128;//make boom even bigger
+      if (allusers.users[i].bs.s==80){//If bomb is in stage 1 of explosion...
+        allusers.users[i].bs.s=120;//make boom even bigger
+      }else if(allusers.users[i].bs.s==120){
+        allusers.users[i].bs.s=144;
+      }else if(allusers.users[i].bs.s==144){
+        allusers.users[i].bs.s=128;
       }else{//otherwise, (if the bomb is in stage 2)
         allusers.users[i].bs.s=20; //reset bomb size
         allusers.users[i].bs.c="magenta";//and color
@@ -343,9 +330,17 @@ function update() { //game loop
       if (allusers.users[i].bs.x<0){
         allusers.users[i].bs.match(allusers.users[i].s);
       }else {
-        allusers.users[i].bs.s=96;//This enlarges (explodes) bomb
+        allusers.users[i].bs.s=80;//This enlarges (explodes) bomb
         allusers.users[i].bs.c="orange";
       }
+    }else if (allusers.users[i].input==11){//level change
+      //change bouncetangles
+    }else if (allusers.users[i].input==12){
+      //change attractors
+    }else if (allusers.users[i].input==13){
+      //change maxspeed
+    }else if (allusers.users[i].input==13){
+      //change maxspeed
     }
     //safe zone
     var safe = false;
@@ -371,7 +366,6 @@ function update() { //game loop
     if (bling.collide(allusers.users[i].bs)&&!safe){//if bomb is touching player
       if (allusers.users[i].bs.c=="orange"&&allusers.users[i].bs.x>0){//if bomb is exploding and in-bounds
         bling.randomize(xsize, ysize, 3); //This function randomizes location and velocity.
-        
         allusers.users[i].score=allusers.users[i].score+2;
         //do more stuff, maybe do a timeout
         } 
@@ -379,8 +373,9 @@ function update() { //game loop
     //bouncing stuff
     allusers.users[i].input = -1;//reset input to null value (0 is down arrow)
     allusers.users[i].s.boundarybounce(xsize, ysize);//Bounces off walls of rectangle
-    allusers.users[i].bs.boundarybounce(xsize, ysize);//Bounces off walls of rectangle
-    
+    if (allusers.users[i].bs.x>0){//only boundarybounce bombs if in bounds--inactive bombs stored oob
+      allusers.users[i].bs.boundarybounce(xsize, ysize);//Bounces off walls of rectangle
+    }
     var j=0;
     while (j<bts.length){
       bts[j].bounce(allusers.users[i].s);
@@ -402,18 +397,15 @@ function update() { //game loop
       }
       j++;
     }
-
     allusers.users[i].s.update1(); //basic motion update
     allusers.users[i].bs.update1();
-    updateplayerarray.push([allusers.users[i].s.x,allusers.users[i].s.y,allusers.users[i].s.c]);
-    updatebombarray.push([allusers.users[i].bs.x,allusers.users[i].bs.y,allusers.users[i].bs.c,allusers.users[i].bs.s]);
+    updateplayerarray.push([allusers.users[i].s.x,allusers.users[i].s.y,allusers.users[i].s.vx,allusers.users[i].s.vy,allusers.users[i].s.c]);
+    updatebombarray.push([allusers.users[i].bs.x,allusers.users[i].bs.y,allusers.users[i].bs.vx,allusers.users[i].bs.vy,allusers.users[i].bs.c,allusers.users[i].bs.s]);
     updatescorearray.push([allusers.users[i].score,allusers.users[i].s.c]);//score and color
     i++;
   }
   bling.boundarybounce(xsize,ysize);
   bling.update1();
-  
   updateblingarray.push([bling.x,bling.y]);//score and color
   io.emit('gameupdate', [updateplayerarray,updatebombarray,updatescorearray,updateblingarray]);
-
 }

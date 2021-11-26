@@ -51,6 +51,7 @@
           updatebombarray = freshxyc[1];
           updatescorearray = freshxyc[2];
           updateblingarray = freshxyc[3];
+          updatetime = time;
         });
 const FPS = 30;
 var canvas, context; 
@@ -62,7 +63,6 @@ canvas = document.getElementById("gameCanvas");      // load canvas
   setInterval(update, 1000 / FPS);    		// set up interval (game loop)
 
   function update() { //game loop
-    time++;
     context.fillStyle = "black"; //background
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = "teal"; //"safe zone" for spawning.  But also a hideout.
@@ -76,21 +76,38 @@ canvas = document.getElementById("gameCanvas");      // load canvas
     context.fillText("You are "+mycolor,canvas.width/2-108,64);
     var i=0;
     while(i<updateplayerarray.length){
-      var px = updateplayerarray[i][0];//player x
-      var py = updateplayerarray[i][1];//player y
-      context.fillStyle = updateplayerarray[i][2]; //color of player
+      var dt = time-updatetime;
+      context.fillStyle = "red"; 
+      context.fillRect(500, 8, dt*32,8);//lag frame meter
+      var px = updateplayerarray[i][0]+dt*updateplayerarray[i][2];//player vx
+      var py = updateplayerarray[i][1]+dt*updateplayerarray[i][3];//player vy
+      context.fillStyle = updateplayerarray[i][4]; //color of player
       context.fillRect(px-16, py-16, 32, 32);
-      var bx = updatebombarray[i][0];//bomb x.  Player and bomb arrays should be same length
-      var by = updatebombarray[i][1];//bomb y
-      var bs = updatebombarray[i][3];//bomb size
-      if (updatebombarray[i][2]!=="orange"){//if bomb not exploded...
-        context.fillStyle = updateplayerarray[i][2]; //color of player applied to bom
-        context.fillRect(bx-bs/2, by-bs/2, bs, bs);// size can change
-        }
-      context.fillStyle = updatebombarray[i][2]; //color of bomb
-      context.fillRect(bx-0.7*bs/2, by-0.7*bs/2, 0.7*bs, 0.7*bs);// size can change
-
-      context.fillStyle = updateplayerarray[i][2]; 
+      var bx = updatebombarray[i][0]+dt*updatebombarray[i][2];//bomb x.  Player and bomb arrays should be same length
+      var by = updatebombarray[i][1]+dt*updatebombarray[i][3];;//bomb y
+      var bs = updatebombarray[i][5];//bomb size
+      context.fillStyle = updateplayerarray[i][4]; //color of player applied to bomb
+      context.fillRect(bx-bs/2, by-bs/2, bs, bs);// size can change
+      if (updatebombarray[i][4]!=="orange"){//if bomb not exploded...
+        //context.fillStyle = updateplayerarray[i][4]; //color of player applied to bomb
+        //context.fillRect(bx-bs/2, by-bs/2, bs, bs);// size can change
+        context.fillStyle = "magenta"; //color of player applied to bomb
+        context.fillRect(bx-0.8*bs/2, by-0.8*bs/2, 0.8*bs, 0.8*bs);// size can change
+      }else{
+      context.fillStyle = "red";///color of bomb explosion
+      context.fillRect(bx-0.9*bs/2, by-0.9*bs/2, 0.9*bs, 0.9*bs);// size can change
+      context.fillStyle = "orange";
+      context.fillRect(bx-0.75*bs/2, by-0.75*bs/2, 0.75*bs, 0.75*bs);
+      context.fillStyle = "yellow";
+      context.fillRect(bx-0.4*bs/2, by-0.4*bs/2, 0.4*bs, 0.4*bs);
+      //context.fillStyle = "green";
+      //context.fillRect(bx-0.5*bs/2, by-0.5*bs/2, 0.5*bs, 0.5*bs);
+      //context.fillStyle = "blue";
+      //context.fillRect(bx-0.375*bs/2, by-0.375*bs/2, 0.375*bs, 0.375*bs);
+      //context.fillStyle = "purple";
+      //context.fillRect(bx-0.25*bs/2, by-0.25*bs/2, 0.25*bs, 0.25*bs);
+      }
+      context.fillStyle = updateplayerarray[i][4]; 
       context.fillRect(0, 32+16*i, updatescorearray[i][0], 12);//score
       //console.log(updatescorearray);
       i++;
@@ -127,7 +144,7 @@ canvas = document.getElementById("gameCanvas");      // load canvas
       context.fillRect(atx-atsize/2+4, aty-atsize/2+4, atsize-8, atsize-8);// size can change 
       i++;
     }   
-
+    time++;
   }
 window.addEventListener("keydown", function (event) {
   if (event.defaultPrevented) {
@@ -152,11 +169,17 @@ switch (event.key) {  //movement keys change velocity
   case " ": // spacebar drops bomb
   socket.emit('gameinput',4);
     break;
-  case "b": 
+  case "1": 
+    socket.emit('gameinput',11);
     break;
-  case "c": 
+  case "2": 
+    socket.emit('gameinput',12);
     break;
-  case "d": 
+  case "3": 
+   socket.emit('gameinput',13);
+    break;
+  case "4": 
+   socket.emit('gameinput',14);
     break;
   default:
   return; // Quit when this doesn't handle the key event.
